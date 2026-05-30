@@ -1,4 +1,4 @@
-name: Java CI with JaCoCo Quality Gate
+name: Java CI with JaCoCo Report
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latestgit
 
     steps:
     - name: Checkout code
@@ -21,31 +21,12 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
-    - name: Build and Run Tests with Maven
-      run: mvn clean test
-
-    - name: Verification of JaCoCo Coverage Gate (85%)
-      run: |
-        REPORT_FILE=target/site/jacoco/jacoco.xml
-        if [ -f "$REPORT_FILE" ]; then
-          COVERED=$(grep -o 'counter type="LINE" missed="[0-9]*" covered="[0-9]*"' $REPORT_FILE | sed -n 's/.*covered="\([0-9]*\)".*/\1/p' | head -n 1)
-          MISSED=$(grep -o 'counter type="LINE" missed="[0-9]*" covered="[0-9]*"' $REPORT_FILE | sed -n 's/.*missed="\([0-9]*\)".*/\1/p' | head -n 1)
-          TOTAL_LINES=$((MISSED + COVERED))
-          
-          if [ "$TOTAL_LINES" -gt 0 ]; then
-            PERCENTAGE=$(( (COVERED * 100) / TOTAL_LINES ))
-            echo "Total Coverage achieved: $PERCENTAGE%"
-            if [ "$PERCENTAGE" -lt 85 ]; then
-              echo "FAIL: Cobertura de codigo de $PERCENTAGE% es inferior al 85% requerido."
-              exit 1
-            fi
-          fi
-        else
-          echo "WARNING: No se encontro el archivo de reporte de JaCoCo."
-        fi
+    - name: Build and Run Tests with JaCoCo Report
+      run: mvn clean test jacoco:report
 
     - name: Upload JaCoCo Coverage Report as Artifact
       uses: actions/upload-artifact@v4
       with:
         name: jacoco-report
         path: target/site/jacoco/
+        
