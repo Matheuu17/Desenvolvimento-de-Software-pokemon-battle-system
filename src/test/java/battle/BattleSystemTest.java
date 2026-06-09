@@ -83,21 +83,25 @@ public class BattleSystemTest {
 
     @Test
     public void testRegla2_CalculoSeAplicaUnaSolaVezPorTurno() {
-        // vida inicial
+        // Guardamos la vida inicial
         int hpInicial = fastPokemon.getHp();
 
-        // Averiguamos cuánto daño exacto debe emitir el golpe antes de aplicarlo
-        int danioTeorico = battleSystem.calcularDanioEmitido(slowPokemon, fastPokemon, "NORMAL");
-        int danioEsperado = Math.max(0, danioTeorico);
+        // Llamamos a la funcion creada
+        int danioSimulado = battleSystem.calcularDanioEmitido(slowPokemon, fastPokemon, "NORMAL");
 
-        // Ejecutamos el asalto real utilizando el sistema de batalla
+        // Ejecutamos el asalto real
         battleSystem.ejecutarAsalto(slowPokemon, fastPokemon, 1);
 
-        // El HP final debe ser exactamente la resta matemática
+        // Guardamos el resultado real
         int hpFinalReal = fastPokemon.getHp();
-        int hpEsperadoFinal = hpInicial - danioEsperado;
 
-        assertEquals(hpEsperadoFinal, hpFinalReal);
+        // El HP esperado lógicamente no puede bajar de 0
+        int hpEsperado = hpInicial - danioSimulado;
+        if (hpEsperado < 0) {
+            hpEsperado = 0;
+        }
+
+        assertEquals(hpEsperado, hpFinalReal);
     }
 
     // =========================================================================
