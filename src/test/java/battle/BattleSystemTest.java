@@ -56,32 +56,48 @@ public class BattleSystemTest {
     @Test
     public void testRegla2_DanioNuncaIncrementaVida() {
         int hpInicial = fastPokemon.getHp();
-        // Cambiado "NORMAL" por el índice numérico 0 para concordar con la firma de
-        // producción
-        // Línea 61 corregida con el String correcto:
         int danioCalculado = battleSystem.calcularDanioEmitido(slowPokemon, fastPokemon, "NORMAL");
 
         fastPokemon.receiveDamage(danioCalculado);
-        assertTrue(fastPokemon.getHp() <= hpInicial, "QA ERROR: El daño jamás debe curar o subir el HP.");
+
+        // Aquí se hace la comparación
+        boolean esValido = fastPokemon.getHp() <= hpInicial;
+
+        assertTrue(esValido);
     }
 
     @Test
     public void testRegla2_VidaNuncaQuedaEnNegativo() {
-        fastPokemon.receiveDamage(9999); // Forzamos daño masivo directo
-        assertEquals(0, fastPokemon.getHp(),
-                "QA ERROR: El HP resultante de un exceso de daño debe ser estrictamente 0.");
+        // Creamos un atacante con estadísticas masivas para simular un "CRITICO"
+        Pokemon SnorlaxDios = new DefaultPokemon(2, "Snorlax", MoveType.NORMAL, null, 999, 160, 9999, 65, 65, 110, 30);
+
+        // Ejecutamos el asalto real utilizando el sistema de batalla
+        // Snorlax ataca a Pikachu
+        battleSystem.ejecutarAsalto(SnorlaxDios, fastPokemon, 1);
+
+        // El HP resultante del defensor debe ser exactamente 0, nunca negativo
+        int hpFinal = fastPokemon.getHp();
+
+        assertEquals(0, hpFinal);
     }
 
     @Test
     public void testRegla2_CalculoSeAplicaUnaSolaVezPorTurno() {
+        // vida inicial
         int hpInicial = fastPokemon.getHp();
 
-        // CAMBIAR EL 0 POR 1 para que use un ataque real de su pool y no la defensa
+        // Averiguamos cuánto daño exacto debe emitir el golpe antes de aplicarlo
+        int danioTeorico = battleSystem.calcularDanioEmitido(slowPokemon, fastPokemon, "NORMAL");
+        int danioEsperado = Math.max(0, danioTeorico);
+
+        // Ejecutamos el asalto real utilizando el sistema de batalla
         battleSystem.ejecutarAsalto(slowPokemon, fastPokemon, 1);
 
-        // Verificamos inmutabilidad: tras recibir el impacto, el HP final debe reflejar
-        // un descuento
-        assertTrue(fastPokemon.getHp() < hpInicial, "QA ERROR: El daño del asalto no modificó el HP.");
+        // El HP final debe ser exactamente la resta matemática
+        int hpFinalReal = fastPokemon.getHp();
+        int hpEsperadoFinal = hpInicial - danioEsperado;
+
+        assertEquals(hpEsperadoFinal, hpFinalReal);
     }
 
     // =========================================================================
@@ -90,21 +106,32 @@ public class BattleSystemTest {
 
     @Test
     public void testRegla3_AtaquesEfectivosCausanMasDanio() {
-        double multiplicador = battleSystem.obtenerFactorEfectividad("AGUA", "FUEGO");
-        assertTrue(multiplicador > 1.0, "QA ERROR: Un ataque efectivo debe tener un multiplicador mayor a 1.0.");
+
+        // LLAMAMOS A LA FUNCION CREADA
+        double multiplicadorReal = battleSystem.obtenerFactorEfectividad("AGUA", "FUEGO");
+
+        // VERIFICACIÓN: Validamos el valor exacto del juego (Súper Efectivo = 2.0)
+
+        assertEquals(2.0, multiplicadorReal, 0.001);
     }
 
     @Test
     public void testRegla3_AtaquesPocoEfectivosCausanMenosDanio() {
-        double multiplicador = battleSystem.obtenerFactorEfectividad("FUEGO", "AGUA");
-        assertTrue(multiplicador < 1.0,
-                "QA ERROR: Un ataque poco efectivo debe reducir el daño (multiplicador < 1.0).");
+        // LLAMAMOS A LA FUNCIÓN CREADA
+        double multiplicadorReal = battleSystem.obtenerFactorEfectividad("FUEGO", "AGUA");
+
+        // VERIFICACIÓN: Validamos el valor exacto del juego (Poco Efectivo = 0.5)
+        assertEquals(0.5, multiplicadorReal, 0.001);
     }
 
     @Test
     public void testRegla3_AtaquesNeutrosMantienenDanioBase() {
-        double multiplicador = battleSystem.obtenerFactorEfectividad("NORMAL", "AGUA");
-        assertEquals(1.0, multiplicador, "QA ERROR: Un ataque neutro debe mantener el multiplicador en 1.0.");
+        // LLAMAMOS A LA FUNCIÓN CREADA
+        double multiplicadorReal = battleSystem.obtenerFactorEfectividad("NORMAL", "AGUA");
+
+        // VERIFICACIÓN: Validamos el valor exacto del juego (Neutro = 1.0)
+
+        assertEquals(1.0, multiplicadorReal, 0.001);
     }
 
     // =========================================================================
@@ -113,25 +140,44 @@ public class BattleSystemTest {
 
     @Test
     public void testRegla4_CombateTerminaCuandoVidaLlegaACero() {
-        fastPokemon.receiveDamage(9999); // Forzamos debilitación
-        assertTrue(battleSystem.verificarCombateFinalizado(fastPokemon, slowPokemon),
-                "QA ERROR: El combate debe marcarse como terminado si un Pokémon cae.");
+
+        // snorlax súper fuerte para debilitar a Pikachu de un golpe
+        Pokemon snorlaxDios = new DefaultPokemon(2, "Snorlax", MoveType.NORMAL, null, 999, 160, 9999, 65, 65, 110, 30);
+
+        // Ejecutamos el asalto para que el daño real debilite al rival
+        battleSystem.ejecutarAsalto(snorlaxDios, fastPokemon, 1);
+
+        // Guardamos el booleano puro fuera del assert
+        boolean combateFinalizado = battleSystem.verificarCombateFinalizado(fastPokemon, snorlaxDios);
+
+        assertTrue(combateFinalizado);
     }
 
     @Test
     public void testRegla4_PokemonDerrotadoNoVuelveAAtacar() {
-        fastPokemon.receiveDamage(9999); // Pikachu cae debilitado
+        // Debilitamos a Pikachu usando el flujo del sistema de batalla
+        Pokemon snorlaxDios = new DefaultPokemon(2, "Snorlax", MoveType.NORMAL, null, 999, 160, 9999, 65, 65, 110, 30);
+        battleSystem.ejecutarAsalto(snorlaxDios, fastPokemon, 1);
 
-        boolean accionEjecutada = battleSystem.ejecutarAsalto(fastPokemon, slowPokemon, 0);
-        assertFalse(accionEjecutada, "QA ERROR: Un Pokémon debilitado no tiene permitido ejecutar ataques.");
+        // El Pikachu debilitado intenta contraatacar en su turno
+        boolean accionEjecutada = battleSystem.ejecutarAsalto(fastPokemon, snorlaxDios, 0);
+
+        assertFalse(accionEjecutada);
     }
 
     @Test
     public void testRegla4_SistemaIdentificaCorrectamenteAlGanador() {
-        slowPokemon.receiveDamage(9999); // Snorlax cae debilitado
-        Pokemon ganador = battleSystem.obtenerGanador(fastPokemon, slowPokemon);
-        assertEquals("Pikachu", ganador.getName(),
-                "QA ERROR: El sistema no reconoció correctamente al Pokémon vencedor.");
+        // Creamos un Pikachu súper fuerte para noquear a Snorlax de forma legal
+        Pokemon pikachuDios = new DefaultPokemon(1, "Pikachu", MoveType.NORMAL, null, 999, 100, 9999, 40, 50, 50, 130);
+
+        // Pikachu noquea a Snorlax dentro del sistema de combate
+        battleSystem.ejecutarAsalto(pikachuDios, slowPokemon, 0);
+
+        // Obtenemos las referencias reales para comparar
+        Pokemon ganador = battleSystem.obtenerGanador(pikachuDios, slowPokemon);
+        String nombreGanadorReal = ganador.getName();
+
+        assertEquals("Pikachu", nombreGanadorReal);
     }
 
     // =========================================================================
@@ -140,24 +186,32 @@ public class BattleSystemTest {
 
     @Test
     public void testRegla5_AtributosNoCambianSinCausaJustificada() {
-        MoveType tipoOriginal = fastPokemon.getType1(); // Corregido getType() por getType1()
+        // Capturamos las "fotografías" iniciales de los atributos estáticos
+        MoveType tipoOriginal = fastPokemon.getType1();
         int velocidadOriginal = fastPokemon.getSpeed();
 
+        // Ejecutamos el asalto real utilizando el sistema de batalla
         battleSystem.ejecutarAsalto(slowPokemon, fastPokemon, 0);
 
-        assertEquals(tipoOriginal, fastPokemon.getType1(),
-                "QA ERROR: El tipo elemental del Pokémon cambió inesperadamente durante el combate.");
-        assertEquals(velocidadOriginal, fastPokemon.getSpeed(),
-                "QA ERROR: La velocidad del Pokémon se alteró sin justificación.");
+        // Guardamos los estados reales resultantes en variables locales
+        MoveType tipoFinalReal = fastPokemon.getType1();
+        int velocidadFinalReal = fastPokemon.getSpeed();
+
+        assertEquals(tipoOriginal, tipoFinalReal);
+        assertEquals(velocidadOriginal, velocidadFinalReal);
     }
 
     @Test
     public void testRegla5_NoExistenEfectosColateralesInesperados() {
+        // Guardamos el ataque original del atacante antes del golpe
         int ataqueOriginalSnorlax = slowPokemon.getAttack();
 
+        // Ejecutamos el asalto en el sistema de batalla
         battleSystem.ejecutarAsalto(slowPokemon, fastPokemon, 0);
 
-        assertEquals(ataqueOriginalSnorlax, slowPokemon.getAttack(),
-                "QA ERROR: Modificar el HP de un Pokémon alteró los atributos estáticos del atacante.");
+        // Guardamos el ataque real final después del impacto
+        int ataqueFinalRealSnorlax = slowPokemon.getAttack();
+
+        assertEquals(ataqueOriginalSnorlax, ataqueFinalRealSnorlax);
     }
 }

@@ -41,20 +41,44 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
                 <executions>
-                    <!-- Prepara el agente de cobertura antes de la ejecución de pruebas -->
+                    <!-- 1. Prepara el agente antes de los tests -->
                     <execution>
                         <id>prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
-                    <!-- Genera el reporte de cobertura al finalizar las pruebas -->
+                    
+                    <!-- 2. Genera el reporte inmediatamente al terminar los tests -->
                     <execution>
                         <id>report</id>
                         <phase>test</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
+                    </execution>
+                    
+                    <!-- 3. Quality Gate oficial: Valida el 85% en la fase correcta -->
+                    <execution>
+                        <id>check-coverage</id>
+                        <phase>verify</phase> <!-- CAMBIO CLAVE: Cambiado a verify -->
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.85</minimum> <!-- Aquí está la restricción del 85%-->
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
