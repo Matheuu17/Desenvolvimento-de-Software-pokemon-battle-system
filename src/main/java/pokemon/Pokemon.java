@@ -26,6 +26,13 @@ public abstract class Pokemon implements Battleable {
     private final ArrayList<Move> moves = new ArrayList<>();
 
     public Pokemon(int id, String name, MoveType type1, MoveType type2, int total, int hp, int attack, int defense, int spAttack, int spDefense, int speed) {
+        if (hp <= 0) {
+            throw new IllegalArgumentException("HP must be greater than 0.");
+        }
+        if (attack < 0 || defense < 0 || spAttack < 0 || spDefense < 0 || speed < 0) {
+            throw new IllegalArgumentException("Statistics cannot be negative.");
+        }
+
         this.id = id;
         this.name = name;
         this.type1 = type1;

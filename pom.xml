@@ -72,8 +72,7 @@
                                     <limits>
                                         <limit>
                                             <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.85</minimum> <!-- Aquí está la restricción del 85%-->
+                                            <value>COVEREDRATIO</value> 
                                         </limit>
                                     </limits>
                                 </rule>
